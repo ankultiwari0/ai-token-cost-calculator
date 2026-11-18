@@ -4,10 +4,6 @@
 
 
 
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -780,10 +776,11 @@ async function exportExcel(){
 
     workbook.creator="OriizenX";
     workbook.subject="TokenIQ AI Cost Intelligence";
-    workbook.title="TokenIQ Premium Cost Intelligence Report";
+    workbook.title="TokenIQ Cost Intelligence Report";
     workbook.company="OriizenX";
     workbook.created=now;
     workbook.modified=now;
+    workbook.calcProperties={calcMode:"auto",fullCalcOnLoad:true,forceFullCalc:true};
 
     const green="176B52", dark="101A16", light="E9F5EF";
     const pale="F4F7F5", grey="F4F6F7", border="E3E9E5";
@@ -855,6 +852,37 @@ async function exportExcel(){
       return n>0?"█".repeat(Math.max(1,n)):"—";
     };
 
+    // LIVE CALCULATOR — editable inputs + native spreadsheet formulas
+    const live=workbook.addWorksheet("Live Calculator",{views:[{state:"frozen",ySplit:3}]});
+    live.columns=[{width:38},{width:22},{width:22},{width:58}];
+    titleBlock(live,4,"Live Calculator","EDIT THE GREEN INPUT CELLS — ALL RESULTS RECALCULATE IN EXCEL / GOOGLE SHEETS");
+    addSection(live,4,"EDITABLE INPUTS",4);
+    const liveInputs=[
+      ["Input tokens per request",d.inputTokens,"tokens","Prompt/input tokens for one API run"],
+      ["Output tokens per request",d.outputTokens,"tokens","Generated/output tokens for one API run"],
+      ["Input price per 1M tokens",d.inputPrice,"USD / 1M","Price entered in USD"],
+      ["Output price per 1M tokens",d.outputPrice,"USD / 1M","Price entered in USD"],
+      ["API runs per day",d.runs,"runs","Number of API calls per day"],
+      ["Days per month",d.days,"days","Configured monthly projection length"],
+      ["Display conversion multiplier",currency==="INR"?exchangeRate:1,currency==="INR"?"INR per USD":"USD","1 for USD; manually configured USD-to-INR rate for INR"]
+    ];
+    live.addRow(["Input","Value","Unit","Description"]);
+    styleHeader(live.getRow(5));
+    liveInputs.forEach((r,i)=>{const row=live.addRow(r);styleBody(row,i);row.getCell(2).font={bold:true,color:{argb:"FF176B52"},size:11};row.getCell(2).fill={type:"pattern",pattern:"solid",fgColor:{argb:"FFE9F5EF"}};row.getCell(2).protection={locked:false};});
+    addSection(live,14,"LIVE CALCULATIONS",4);
+    live.addRow(["Metric","Formula result","Unit","Calculation"]);styleHeader(live.getRow(15));
+    const liveMetrics=[
+      ["Input cost per day",`=B6*B8*B10/1000000*B12`,d.inputDaily*(currency==="INR"?exchangeRate:1),currency,"Input tokens × input price × runs ÷ 1M × multiplier"],
+      ["Output cost per day",`=B7*B9*B10/1000000*B12`,d.outputDaily*(currency==="INR"?exchangeRate:1),currency,"Output tokens × output price × runs ÷ 1M × multiplier"],
+      ["Total daily cost",`=B16+B17`,d.daily*(currency==="INR"?exchangeRate:1),currency,"Input + output daily cost"],
+      ["Monthly estimate",`=B18*B11`,d.monthly*(currency==="INR"?exchangeRate:1),currency,"Daily cost × days per month"],
+      ["Yearly projection",`=B18*365`,d.yearly*(currency==="INR"?exchangeRate:1),currency,"Daily cost × 365"],
+      ["Cost per API run",`=IF(B10=0,0,B18/B10)`,d.runCost*(currency==="INR"?exchangeRate:1),currency,"Daily cost ÷ daily API runs"]
+    ];
+    liveMetrics.forEach((m,i)=>{const row=live.addRow([m[0],{formula:m[1].slice(1),result:m[2]},m[3],m[4]]);styleBody(row,i);row.getCell(2).numFmt=moneyFormat;row.getCell(2).font={bold:true,color:{argb:"FF176B52"},size:11};});
+    live.mergeCells("A23:D23");live.getCell("A23").value="Green cells are editable. Formula results update when the workbook recalculates. Preset prices remain illustrative; verify provider rates before relying on estimates.";live.getCell("A23").font={italic:true,color:{argb:"FF6F7B73"},size:9};live.getCell("A23").alignment={wrapText:true,vertical:"middle"};live.getRow(23).height=36;
+    live.views=[{state:"frozen",ySplit:5}];
+
     // 1 — EXECUTIVE DASHBOARD
     const dash=workbook.addWorksheet("Executive Dashboard",{views:[{state:"frozen",ySplit:4}]});
     dash.columns=[{width:32},{width:22},{width:22},{width:22},{width:18}];
@@ -864,10 +892,10 @@ async function exportExcel(){
     dash.getCell("A3").font={name:"Aptos",size:9,color:{argb:"FF"+muted}};
     addSection(dash,5,"EXECUTIVE SNAPSHOT",5);
     const kpis=[
-      ["Daily estimated cost",convert(d.daily)],
-      ["Monthly estimated cost",convert(d.monthly)],
-      ["Yearly estimated cost",convert(d.yearly)],
-      ["Cost per API run",convert(d.runCost)]
+      ["Daily estimated cost",{formula:"'Live Calculator'!B18",result:convert(d.daily*(currency==="INR"?exchangeRate:1))}],
+      ["Monthly estimated cost",{formula:"'Live Calculator'!B19",result:convert(d.monthly*(currency==="INR"?exchangeRate:1))}],
+      ["Yearly estimated cost",{formula:"'Live Calculator'!B20",result:convert(d.yearly*(currency==="INR"?exchangeRate:1))}],
+      ["Cost per API run",{formula:"'Live Calculator'!B21",result:convert(d.runCost*(currency==="INR"?exchangeRate:1))}]
     ];
     kpis.forEach((k,i)=>{
       const col=1+i;
@@ -927,9 +955,9 @@ async function exportExcel(){
     let h=cost.addRow(["Cost component","Daily cost","Monthly cost","Yearly cost","Share of total"]);
     styleHeader(h);
     [
-      ["Input tokens",convert(d.inputDaily),convert(d.inputDaily*d.days),convert(d.inputDaily*365),inputShare],
-      ["Output tokens",convert(d.outputDaily),convert(d.outputDaily*d.days),convert(d.outputDaily*365),outputShare],
-      ["TOTAL",convert(d.daily),convert(d.monthly),convert(d.yearly),1]
+      ["Input tokens",{formula:"'Live Calculator'!B16",result:convert(d.inputDaily*(currency==="INR"?exchangeRate:1))},{formula:"B6*'Live Calculator'!B11",result:convert(d.inputDaily*d.days*(currency==="INR"?exchangeRate:1))},{formula:"B6*365",result:convert(d.inputDaily*365*(currency==="INR"?exchangeRate:1))},inputShare],
+      ["Output tokens",{formula:"'Live Calculator'!B17",result:convert(d.outputDaily*(currency==="INR"?exchangeRate:1))},{formula:"B7*'Live Calculator'!B11",result:convert(d.outputDaily*d.days*(currency==="INR"?exchangeRate:1))},{formula:"B7*365",result:convert(d.outputDaily*365*(currency==="INR"?exchangeRate:1))},outputShare],
+      ["TOTAL",{formula:"'Live Calculator'!B18",result:convert(d.daily*(currency==="INR"?exchangeRate:1))},{formula:"'Live Calculator'!B19",result:convert(d.monthly*(currency==="INR"?exchangeRate:1))},{formula:"'Live Calculator'!B20",result:convert(d.yearly*(currency==="INR"?exchangeRate:1))},1]
     ].forEach((r,i)=>{
       const row=cost.addRow(r);styleBody(row,i);
       [2,3,4].forEach(c=>row.getCell(c).numFmt=moneyFormat);
