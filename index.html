@@ -1,1 +1,370 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#090b12">
+<title>TokenIQ — AI Token Cost Calculator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg:#090b12;
+  --panel:#111522;
+  --panel2:#171d2d;
+  --text:#f4f6ff;
+  --muted:#8992a9;
+  --accent:#a78bfa;
+  --green:#65e6b3;
+  --border:#293047;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:radial-gradient(ellipse at 50% -20%,#28204b 0%,transparent 48%),var(--bg);
+  color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  min-height:100vh;
+}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.container{max-width:1100px;margin:auto;padding:25px 22px 60px}
+nav{height:65px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:11px;font-family:'Space Grotesk';font-weight:700;font-size:21px}
+.logo{
+ width:37px;height:37px;border:1px solid #a78bfa;border-radius:12px;
+ display:grid;place-items:center;color:var(--accent);font-size:21px;
+ box-shadow:0 0 18px #a78bfa30
+}
+.nav-right{display:flex;align-items:center;gap:10px}
+.tag{border:1px solid #34415c;border-radius:30px;padding:6px 11px;font-size:11px;color:#b8c0d5}
+.hero{text-align:center;padding:64px 10px 35px}
+.eyebrow{color:var(--green);font-size:12px;letter-spacing:2px;font-weight:700;margin-bottom:16px}
+h1{font-family:'Space Grotesk';font-size:clamp(34px,6vw,58px);letter-spacing:-2px;line-height:1.1}
+h1 span{color:var(--accent)}
+.hero p{color:var(--muted);margin:15px auto 0;max-width:530px;line-height:1.7;font-size:14px}
+.calculator{max-width:920px;margin:15px auto}
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}
+.panel{
+ background:linear-gradient(145deg,#151a29,#101421);
+ border:1px solid var(--border);border-radius:18px;padding:25px;
+ box-shadow:0 15px 50px #0003;
+}
+.panel-title{font-family:'Space Grotesk';font-size:17px;font-weight:700;margin-bottom:22px}
+.field{margin-bottom:19px}
+.field-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+label{font-size:13px;font-weight:600;color:#dce0ed}
+.hint{font-size:11px;color:var(--muted)}
+input,select{
+ width:100%;height:47px;padding:0 14px;border-radius:10px;
+ border:1px solid #303950;background:#0c101b;color:white;outline:none;
+ transition:.2s;
+}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px #a78bfa20}
+select{cursor:pointer}
+.currency-row{display:flex;gap:10px;align-items:center}
+.currency-row select{width:110px}
+.currency-row input{flex:1;min-width:0}
+.preset{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn{
+ background:transparent;border:1px solid #454d68;color:#dce1f2;
+ border-radius:9px;padding:9px 13px;font-size:12px;font-weight:600;
+ transition:transform .18s,border-color .18s,background .18s;
+}
+.btn:hover{border-color:var(--accent);background:#a78bfa15;color:white;transform:translateY(-2px)}
+.btn:active{transform:scale(.96)}
+.btn.primary{border-color:var(--accent);color:#d8caff;background:#a78bfa14}
+.btn.primary:hover{background:#a78bfa30}
+.btn.green{border-color:#65e6b3;color:var(--green)}
+.actions{display:flex;gap:10px;margin-top:24px}
+.actions button{flex:1;padding:13px}
+.result-panel{display:flex;flex-direction:column}
+.total-box{
+ background:linear-gradient(145deg,#211c3b,#171a2d);
+ border:1px solid #51417e;border-radius:14px;padding:23px 19px;margin-bottom:18px;
+}
+.total-label{color:#c0b2ed;font-size:12px;font-weight:600}
+.total{font-family:'Space Grotesk';font-size:clamp(32px,5vw,43px);font-weight:700;margin:10px 0 5px;overflow-wrap:anywhere}
+.total-sub{color:#a4a1b9;font-size:11px}
+.breakdown{display:grid;gap:12px}
+.break-row{display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.break-row span:first-child{color:var(--muted)}
+.break-row strong{font-weight:600}
+.divider{height:1px;background:var(--border);margin:6px 0}
+.info{
+ background:#0c1820;border:1px solid #21443d;border-radius:11px;padding:13px;
+ color:#a5cbbd;font-size:11px;line-height:1.6;margin-top:auto;
+}
+.info b{color:var(--green)}
+footer{text-align:center;margin-top:45px;color:#707991;font-size:12px;line-height:2}
+footer a{color:#b9a5ff;text-decoration:none}
+.toast{
+ position:fixed;bottom:25px;left:50%;transform:translate(-50%,20px);
+ background:#202b32;border:1px solid #65e6b3;color:white;
+ padding:12px 20px;border-radius:10px;font-size:13px;
+ opacity:0;pointer-events:none;transition:.25s;z-index:5;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:700px){
+ .container{padding:15px 14px 40px}
+ .hero{padding:48px 5px 25px}
+ .grid{grid-template-columns:1fr}
+ .panel{padding:19px}
+ .actions{flex-direction:column}
+ .nav-right .tag{display:none}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<nav>
+ <div class="brand"><div class="logo">✳</div>TokenIQ</div>
+ <div class="nav-right">
+  <span class="tag">OPEN SOURCE</span>
+  <span class="tag">BY ORIIZENX</span>
+ </div>
+</nav>
+
+<header class="hero">
+ <div class="eyebrow">✦ FREE AI DEVELOPER TOOL</div>
+ <h1>Know Your AI Costs.<br><span>Before You Scale.</span></h1>
+ <p>Calculate your AI API token expenses instantly. Simple, transparent and built for developers.</p>
+</header>
+
+<main class="calculator">
+<div class="grid">
+<section class="panel">
+ <div class="panel-title">01 / Configure Usage</div>
+
+ <div class="field">
+  <div class="field-head">
+   <label for="model">Model / Provider</label>
+   <span class="hint">Optional preset</span>
+  </div>
+  <select id="model">
+   <option value="custom">Custom pricing</option>
+   <option value="gpt4o">GPT-4o (example rates)</option>
+   <option value="gptmini">GPT-4o mini (example rates)</option>
+   <option value="claude">Claude Sonnet (example rates)</option>
+   <option value="gemini">Gemini Flash (example rates)</option>
+  </select>
+  <div class="hint" style="margin-top:7px">Presets are illustrative. Verify current provider pricing.</div>
+ </div>
+
+ <div class="field">
+  <div class="field-head">
+   <label for="inputTokens">Input Tokens</label>
+   <span class="hint">Prompt / Context</span>
+  </div>
+  <input type="number" id="inputTokens" min="0" step="1" value="100000" placeholder="e.g. 100000">
+ </div>
+
+ <div class="field">
+  <div class="field-head">
+   <label for="outputTokens">Output Tokens</label>
+   <span class="hint">Generated response</span>
+  </div>
+  <input type="number" id="outputTokens" min="0" step="1" value="50000" placeholder="e.g. 50000">
+ </div>
+
+ <div class="field">
+  <div class="field-head">
+   <label>Input Price / 1M Tokens</label>
+   <span class="hint">Provider pricing</span>
+  </div>
+  <div class="currency-row">
+   <span class="hint">USD $</span>
+   <input type="number" id="inputPrice" min="0" step="any" value="2.50">
+  </div>
+ </div>
+
+ <div class="field">
+  <div class="field-head">
+   <label>Output Price / 1M Tokens</label>
+   <span class="hint">Provider pricing</span>
+  </div>
+  <div class="currency-row">
+   <span class="hint">USD $</span>
+   <input type="number" id="outputPrice" min="0" step="any" value="10">
+  </div>
+ </div>
+
+ <div class="field">
+  <div class="field-head"><label for="currency">Display Currency</label></div>
+  <select id="currency">
+   <option value="USD">USD — US Dollar</option>
+   <option value="INR">INR — Indian Rupee</option>
+  </select>
+  <div class="hint" style="margin-top:7px">INR conversion uses an editable exchange rate below.</div>
+ </div>
+
+ <div class="field" id="exchangeField" style="display:none">
+  <div class="field-head"><label for="exchange">USD to INR exchange rate</label></div>
+  <input type="number" id="exchange" min="0.01" step="any" value="88">
+ </div>
+
+ <div class="actions">
+  <button class="btn primary" id="reset">↺ Reset</button>
+  <button class="btn green" id="copy">▣ Copy Report</button>
+ </div>
+</section>
+
+<section class="panel result-panel">
+ <div class="panel-title">02 / Cost Breakdown</div>
+ <div class="total-box">
+  <div class="total-label">TOTAL ESTIMATED COST</div>
+  <div class="total" id="total">$0.7500</div>
+  <div class="total-sub">Based on your entered token usage and rates</div>
+ </div>
+ <div class="breakdown">
+  <div class="break-row"><span>Input cost</span><strong id="inCost">$0.2500</strong></div>
+  <div class="break-row"><span>Output cost</span><strong id="outCost">$0.5000</strong></div>
+  <div class="divider"></div>
+  <div class="break-row"><span>Total tokens</span><strong id="tokens">150,000</strong></div>
+  <div class="break-row"><span>Input tokens</span><strong id="inDisplay">100,000</strong></div>
+  <div class="break-row"><span>Output tokens</span><strong id="outDisplay">50,000</strong></div>
+  <div class="divider"></div>
+  <div class="break-row"><span>Cost per 1K tokens</span><strong id="per1k">$0.0050</strong></div>
+  <div class="break-row"><span>Cost per 1M tokens</span><strong id="per1m">$5.0000</strong></div>
+ </div>
+ <div class="info">
+  <b>ⓘ Transparent calculation</b><br>
+  Input cost = (Input Tokens ÷ 1,000,000) × Input Price.<br>
+  Output cost = (Output Tokens ÷ 1,000,000) × Output Price.<br>
+  Actual invoices may include caching, tools, taxes and other charges.
+ </div>
+</section>
+</div>
+</main>
+
+<footer>
+ <div>Built for developers, by <a href="https://github.com/ankultiwari0" target="_blank" rel="noopener">OriizenX</a>.</div>
+ <div>Free to use · Open source · MIT License</div>
+</footer>
+</div>
+<div class="toast" id="toast">Report copied successfully!</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const fields = ['inputTokens','outputTokens','inputPrice','outputPrice','exchange'];
+
+const presets = {
+ custom:null,
+ gpt4o:[2.50,10],
+ gptmini:[0.15,0.60],
+ claude:[3,15],
+ gemini:[0.10,0.40]
+};
+
+const number = id => {
+ const value = Number($(id).value);
+ return Number.isFinite(value) && value >= 0 ? value : 0;
+};
+
+const format = (value, currency) => {
+ const symbol = currency === 'INR' ? '₹' : '$';
+ return symbol + value.toLocaleString('en-US',{
+  minimumFractionDigits:4,
+  maximumFractionDigits:4
+ });
+};
+
+let report = '';
+
+function calculate(){
+ const inputTokens = number('inputTokens');
+ const outputTokens = number('outputTokens');
+ const inputPrice = number('inputPrice');
+ const outputPrice = number('outputPrice');
+
+ const inCost = inputTokens / 1000000 * inputPrice;
+ const outCost = outputTokens / 1000000 * outputPrice;
+ const total = inCost + outCost;
+ const tokens = inputTokens + outputTokens;
+
+ const currency = $('currency').value;
+ const rate = currency === 'INR' ? number('exchange') : 1;
+ const converted = amount => amount * rate;
+
+ $('total').textContent = format(converted(total),currency);
+ $('inCost').textContent = format(converted(inCost),currency);
+ $('outCost').textContent = format(converted(outCost),currency);
+ $('tokens').textContent = tokens.toLocaleString('en-US');
+ $('inDisplay').textContent = inputTokens.toLocaleString('en-US');
+ $('outDisplay').textContent = outputTokens.toLocaleString('en-US');
+ $('per1k').textContent = format(converted(tokens ? total / tokens * 1000 : 0),currency);
+ $('per1m').textContent = format(converted(tokens ? total / tokens * 1000000 : 0),currency);
+
+ report = [
+  'TokenIQ — AI Token Cost Report',
+  '-----------------------------',
+  'Input tokens: '+inputTokens,
+  'Output tokens: '+outputTokens,
+  'Input price per 1M: $'+inputPrice,
+  'Output price per 1M: $'+outputPrice,
+  'Total tokens: '+tokens,
+  'Input cost: '+format(converted(inCost),currency),
+  'Output cost: '+format(converted(outCost),currency),
+  'Total estimated cost: '+format(converted(total),currency),
+  'Currency: '+currency,
+  'Exchange rate: '+rate,
+  'Calculated with TokenIQ by OriizenX'
+ ].join('\n');
+}
+
+fields.forEach(id => $(id).addEventListener('input',calculate));
+
+$('currency').addEventListener('change',()=>{
+ $('exchangeField').style.display =
+  $('currency').value === 'INR' ? 'block' : 'none';
+ calculate();
+});
+
+$('model').addEventListener('change',()=>{
+ const preset = presets[$('model').value];
+ if(preset){
+  $('inputPrice').value = preset[0];
+  $('outputPrice').value = preset[1];
+ }
+ calculate();
+});
+
+$('reset').addEventListener('click',()=>{
+ $('model').value='custom';
+ $('inputTokens').value=0;
+ $('outputTokens').value=0;
+ $('inputPrice').value=0;
+ $('outputPrice').value=0;
+ $('currency').value='USD';
+ $('exchange').value=88;
+ $('exchangeField').style.display='none';
+ calculate();
+});
+
+$('copy').addEventListener('click',async()=>{
+ try{
+  await navigator.clipboard.writeText(report);
+  showToast('Report copied successfully!');
+ }catch(error){
+  const area=document.createElement('textarea');
+  area.value=report;
+  document.body.appendChild(area);
+  area.select();
+  document.execCommand('copy');
+  area.remove();
+  showToast('Report copied!');
+ }
+});
+
+function showToast(message){
+ $('toast').textContent=message;
+ $('toast').classList.add('show');
+ setTimeout(()=>$('toast').classList.remove('show'),2200);
+}
+
+calculate();
+</script>
+</body>
+</html>
+
